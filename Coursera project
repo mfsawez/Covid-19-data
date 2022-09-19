@@ -1,0 +1,107 @@
+#Task 1
+library(httr)
+wiki_base_url <-'https://en.wikipedia.org/w/index.php?title=Template:COVID-19_testing_by_country'
+get_wiki_covid19_page <- GET(wiki_base_url)
+get_wiki_covid19_page
+
+#Task 2
+library(rvest)
+covid_node <- read_html('https://en.wikipedia.org/w/index.php?title=Template:COVID-19_testing_by_country')
+covid_table_node <- html_node(covid_node, "table")
+covid_table <- html_table(covid_table_node)
+covid_table
+summary(covid_table)
+
+#Task 3
+preprocess_covid_data_frame <- function(covid_table) {
+    
+    shape <- dim(covid_table)
+
+    # Remove the World row
+    covid_table<-covid_table[!(covid_table$`Country or region`=="World"),]
+    # Remove the last row
+    covid_table <- covid_table[1:172, ]
+    
+    # We dont need the Units and Ref columns, so can be removed
+    covid_table["Ref."] <- NULL
+    covid_table["Units[b]"] <- NULL
+    
+    # Renaming the columns
+    names(covid_table) <- c("country", "date", "tested", "confirmed", "confirmed.tested.ratio", "tested.population.ratio", "confirmed.population.ratio")
+    
+    # Convert column data types
+    covid_table$country <- as.factor(covid_table$country)
+    covid_table$date <- as.factor(covid_table$date)
+    covid_table$tested <- as.numeric(gsub(",","",covid_table$tested))
+    covid_table$confirmed <- as.numeric(gsub(",","",covid_table$confirmed))
+    covid_table$'confirmed.tested.ratio' <- as.numeric(gsub(",","",covid_table$`confirmed.tested.ratio`))
+    covid_table$'tested.population.ratio' <- as.numeric(gsub(",","",covid_table$`tested.population.ratio`))
+    covid_table$'confirmed.population.ratio' <- as.numeric(gsub(",","",covid_table$`confirmed.population.ratio`))
+    
+    return(covid_table)
+}
+
+new_covid_table <- preprocess_covid_data_frame(covid_table)
+new_data_frame <- preprocess_covid_data_frame
+
+summary(new_covid_table)
+
+write.csv(new_covid_table, "Covid19WorldData.csv")
+
+wd <- getwd()
+file_path <- paste(wd, sep="", "/Covid19WorldData.csv")
+print(file_path)
+file.exists(file_path)
+
+#Task 4
+new_covid_table
+new_covid_table[5:10, c(1,4)] 
+
+#Task 5
+(total_confirmed_cases <- colSums(new_covid_table[4]))
+(total_tested_cases <- colSums(new_covid_table[3]))
+(positive_ratio <- total_confirmed_cases / total_tested_cases)
+
+#Task 6
+country <- new_covid_table['country']
+country <- as.factor(country)
+class(country)
+country_character <- as.character(country)
+new_covid_table[order(new_covid_table$country, na.last = FALSE),]
+sorted_country <- new_covid_table[order(new_covid_table$country, na.last = TRUE),]
+print(sorted_country)
+
+#Task 7
+(united <- grep("United.+", new_covid_table$country, value = TRUE))
+print(united)
+
+#Task 8
+(country1 <- new_covid_table[37,c(1,4,7)])
+(country2 <- new_covid_table[168,c(1,4,7)])
+
+#Task 9
+Croatia_ratio <- new_covid_table[37,7]
+Uzbekistan_ratio <- new_covid_table[168,7]
+
+if (Croatia_ratio > Uzbekistan_ratio) {
+    return("Croatia has a larger ratio of confirmed cases to population")
+} else {
+    return("Uzbekistan has a larger ratio of confirmed cases to population")
+}
+
+#Task 10
+library(dplyr)
+library(magrittr)
+confirmed_population_ratio <- new_covid_table[,c(1,7)]
+low_risk_countries <- new_covid_table %>%
+                       select(country, confirmed.population.ratio) %>%
+                          filter(confirmed.population.ratio < 0.01)
+						  
+head(low_risk_countries,10)
+low_risk_countries <- function(confirmed.population.ratio, threshold = 0.01) 
+
+
+low_risk_countries <- function(confirmed_population_ratio, threshold = 0.01){ 
+		ratio <- new_covid_table[new_covid_table[,c(1,7)] == confirmed_population_ratio , "confirmed.population.ratio"]
+		isLowRisk(ratio, threshold < 0.01)
+		}
